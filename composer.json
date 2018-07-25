@@ -1,0 +1,19 @@
+{
+    "name": "bogdanpet/orthite-router",
+    "type": "package",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Bogdan Petkovic",
+            "email": "bgdnptkvc@gmail.com"
+        }
+    ],
+    "require": {
+        "bogdanpet/orthite-di": "^1.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Orthite\\Http\\": "src/"
+        }
+    }
+}
