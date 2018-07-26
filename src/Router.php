@@ -44,6 +44,8 @@ class Router
 
     protected $controllersNamespace = '';
 
+    protected $entry = null;
+
     public function __construct(Request $request, Response $response, Container $container) {
         $this->request = $request;
         $this->response = $response;
@@ -87,7 +89,7 @@ class Router
 
     protected function runAuto()
     {
-
+        return $this->resolveRouteAuto();
     }
 
     public function setControllerNamespace($namespace)
@@ -117,6 +119,33 @@ class Router
         }
 
         return reset($routes);
+    }
+
+    protected function resolveRouteAuto()
+    {
+        $requestedRoute = $requestedRoute = explode('/', $this->request->route);
+
+        if ($this->entry === null) {
+            $namespace = $this->controllersNamespace . '\\';
+            $controller = $namespace . ucfirst(!empty($requestedRoute[0]) ? $requestedRoute[0] : 'home') . 'Controller';
+            $method = !empty($requestedRoute[1]) ? $requestedRoute[1] : 'index';
+            $params = array_slice($requestedRoute, 2);
+        } else if ($requestedRoute[0] === $this->entry) {
+            $namespace = $this->controllersNamespace . '\\' . ucfirst($this->entry) . '\\';
+            $controller = $namespace . ucfirst(!empty($requestedRoute[1]) ? $requestedRoute[1] : 'home') . 'Controller';
+            $method = !empty($requestedRoute[2]) ? $requestedRoute[2] : 'index';
+            $params = array_slice($requestedRoute, 3);
+        } else {
+            // TODO: Add exception.
+            die('Route not found');
+        }
+
+        try {
+            return $this->container->call($controller, $method, ['args' => $params]);
+        } catch (\Exception $e) {
+            // TODO: Add exception
+            die('Route not found');
+        }
     }
 
     protected function getParams($route)
