@@ -42,16 +42,38 @@ class Router
      */
     protected $routes = [];
 
+    /**
+     * Base namespace for controllers.
+     *
+     * @var string
+     */
     protected $controllersNamespace = '';
 
+    /**
+     * Router entry point.
+     *
+     * @var null
+     */
     protected $entry = null;
 
+    /**
+     * Router constructor.
+     *
+     * @param Request $request
+     * @param Response $response
+     * @param Container $container
+     */
     public function __construct(Request $request, Response $response, Container $container) {
         $this->request = $request;
         $this->response = $response;
         $this->container = $container;
     }
 
+    /**
+     * Execute the route building script for strict routing mode.
+     *
+     * @param callable $execute
+     */
     public function define(callable $execute)
     {
         $routeBuilder = $this->container->get(RouteBuilder::class);
@@ -59,6 +81,9 @@ class Router
         $this->routes = $execute($routeBuilder);
     }
 
+    /**
+     * Run router.
+     */
     public function run()
     {
         $modeMethod = 'run' . ucfirst($this->mode);
@@ -68,6 +93,11 @@ class Router
         $this->response->output($response);
     }
 
+    /**
+     * Run router in strict mode.
+     *
+     * @return mixed
+     */
     protected function runStrict()
     {
         if ($route = $this->resolveRouteStrict()) {
@@ -87,21 +117,41 @@ class Router
         }
     }
 
+    /**
+     * Run router in automatic mode.
+     *
+     * @return mixed
+     */
     protected function runAuto()
     {
         return $this->resolveRouteAuto();
     }
 
+    /**
+     * Base controller namespace setter.
+     *
+     * @param $namespace
+     */
     public function setControllerNamespace($namespace)
     {
         $this->controllersNamespace = trim($namespace, ' \\');
     }
 
+    /**
+     * Mode setter.
+     *
+     * @param $mode
+     */
     public function setResolverMode($mode)
     {
         $this->mode = $mode;
     }
 
+    /**
+     * Resolve route in strict mode.
+     *
+     * @return mixed
+     */
     protected function resolveRouteStrict()
     {
         $requestedRoute = explode('/', $this->request->route);
@@ -121,6 +171,11 @@ class Router
         return reset($routes);
     }
 
+    /**
+     * Resolve route in automatic mode.
+     *
+     * @return mixed
+     */
     protected function resolveRouteAuto()
     {
         $requestedRoute = $requestedRoute = explode('/', $this->request->route);
@@ -148,6 +203,12 @@ class Router
         }
     }
 
+    /**
+     * Get params for strict mode execution. Resolving wildcards.
+     *
+     * @param $route
+     * @return array|bool
+     */
     protected function getParams($route)
     {
         $resolvedRoute = explode('/', $route['route']);
