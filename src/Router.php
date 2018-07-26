@@ -61,19 +61,20 @@ class Router
     {
         $modeMethod = 'run' . ucfirst($this->mode);
 
-        $this->$modeMethod();
+        $response = $this->$modeMethod();
+
+        $this->response->output($response);
     }
 
     protected function runStrict()
     {
-        if ($route = $this->resolveRoute()) {
+        if ($route = $this->resolveRouteStrict()) {
             if ($route['access'] == strtolower($_SERVER['REQUEST_METHOD'])) {
                 $controller = $this->controllersNamespace . '\\' . $route['controller'];
                 $method = $route['method'];
-                $access = $route['access'];
-                $params = $this->request->$access;
+                $params = $this->getParams($route);
 
-                $this->container->call($controller, $method, $params);
+                return $this->container->call($controller, $method, $params);
             } else {
                 // TODO: Add exception
                 die('Forbidden access');
@@ -84,20 +85,30 @@ class Router
         }
     }
 
+    protected function runAuto()
+    {
+
+    }
+
     public function setControllerNamespace($namespace)
     {
         $this->controllersNamespace = trim($namespace, ' \\');
     }
 
-    protected function resolveRoute()
+    public function setResolverMode($mode)
+    {
+        $this->mode = $mode;
+    }
+
+    protected function resolveRouteStrict()
     {
         $requestedRoute = explode('/', $this->request->route);
         $routes = [];
 
         foreach ($requestedRoute as $place => $segment) {
-            $routes = array_filter($this->routes, function($route) use ($place, $segment) {
+            $routes = array_filter($this->routes, function($route) use ($place, $segment, $requestedRoute) {
                 $routeSegments = explode('/', $route);
-                if (isset($routeSegments[$place])) {
+                if (isset($routeSegments[$place]) && count($routeSegments) === count($requestedRoute)) {
                     return $segment == $routeSegments[$place] || preg_match('/{[a-zA-Z0-9_]+}/', $routeSegments[$place]);
                 } else {
                     return false;
@@ -105,6 +116,28 @@ class Router
             }, ARRAY_FILTER_USE_KEY);
         }
 
-        return $routes[0];
+        return reset($routes);
+    }
+
+    protected function getParams($route)
+    {
+        $resolvedRoute = explode('/', $route['route']);
+        $requestedRoute = explode('/', $this->request->route);
+
+        $keys = array_diff($resolvedRoute, $requestedRoute);
+        $values = array_diff($requestedRoute, $resolvedRoute);
+
+        $params = [];
+
+        foreach ($keys as $index => $key) {
+            if (isset($values[$index])) {
+                $params[trim($key, '{}')] = $values[$index];
+            } else {
+                return false;
+            }
+        }
+
+        $access = $route['access'];
+        return array_merge($this->request->$access(), $params);
     }
 }

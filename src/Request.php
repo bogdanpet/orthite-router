@@ -19,6 +19,11 @@ class Request
         $this->cookie = $_COOKIE;
     }
 
+    public function get($key = null)
+    {
+        return $key ? $this->get['key'] : $this->get;
+    }
+
     public function __get($name)
     {
         if (array_key_exists($name, $this->get)) {

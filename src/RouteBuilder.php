@@ -17,7 +17,9 @@ class RouteBuilder
 
         $wildcards = $wildcards[1];
 
-        $this->routes[trim($route, ' /')] = compact('controller', 'method', 'access', 'wildcards');
+        $route = trim($route, ' /');
+
+        $this->routes[$route] = compact('route', 'controller', 'method', 'access', 'wildcards');
     }
 
     public function post($route, $call)
